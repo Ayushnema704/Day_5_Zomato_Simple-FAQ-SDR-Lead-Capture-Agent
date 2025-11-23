@@ -1,59 +1,71 @@
-# AI Voice Agents Challenge - Starter Repository
+# MindfulMate - AI Wellness Companion
 
-Welcome to the **AI Voice Agents Challenge** by [murf.ai](https://murf.ai)!
+**Day 3 Challenge - Personal Wellness Voice Agent**
 
-## About the Challenge
+MindfulMate is an empathetic AI wellness companion built with LiveKit Agents and Murf Falcon TTS. It provides personalized daily wellness check-ins, tracks your emotional and physical well-being, and offers supportive guidance through natural voice conversations.
 
-We just launched **Murf Falcon** – the consistently fastest TTS API, and you're going to be among the first to test it out in ways never thought before!
+## About This Project
 
-**Build 10 AI Voice Agents over the course of 10 Days** along with help from our devs and the community champs, and win rewards!
+Part of the **AI Voice Agents Challenge** by [murf.ai](https://murf.ai), MindfulMate demonstrates how AI voice agents can provide mental health support and wellness tracking through natural, empathetic conversations.
 
-### How It Works
+### Key Features
 
-- One task to be provided everyday along with a GitHub repo for reference
-- Build a voice agent with specific personas and skills
-- Post on GitHub and share with the world on LinkedIn!
+- 🎙️ **Natural Voice Conversations** - Ultra-fast, human-like responses using Murf Falcon TTS
+- 💚 **Wellness Check-ins** - Track mood, energy levels, sleep, and stress
+- 📊 **Historical Tracking** - Saves and retrieves past check-ins to provide personalized insights
+- 🤝 **Empathetic Support** - Designed with trauma-informed, non-judgmental conversation patterns
+- 💬 **Real-time Chat** - Text-based chat alongside voice interaction
 
 ## Repository Structure
 
-This is a **monorepo** that contains both the backend and frontend for building voice agent applications. It's designed to be your starting point for each day's challenge task.
-
 ```
-falcon-tdova-nov25-livekit/
-├── backend/          # LiveKit Agents backend with Murf Falcon TTS
-├── frontend/         # React/Next.js frontend for voice interaction
-├── start_app.sh      # Convenience script to start all services
+Mindful-Health-Agent/
+├── backend/          # Python agent with wellness tracking logic
+│   ├── src/
+│   │   └── agent.py  # Main agent with wellness tools
+│   └── wellness_log.json  # Persistent check-in storage
+├── frontend/         # Next.js UI with voice interface
+├── start_app.ps1     # Windows startup script
 └── README.md         # This file
 ```
 
 ### Backend
 
-The backend is based on [LiveKit's agent-starter-python](https://github.com/livekit-examples/agent-starter-python) with modifications to integrate **Murf Falcon TTS** for ultra-fast, high-quality voice synthesis.
+The wellness companion agent built with LiveKit Agents framework.
 
-**Features:**
+**Technologies:**
 
-- Complete voice AI agent framework using LiveKit Agents
-- Murf Falcon TTS integration for fastest text-to-speech
-- LiveKit Turn Detector for contextually-aware speaker detection
-- Background voice cancellation
-- Integrated metrics and logging
-- Complete test suite with evaluation framework
-- Production-ready Dockerfile
+- **TTS**: Murf Falcon (en-US-matthew voice, Conversation style)
+- **STT**: Deepgram nova-3
+- **LLM**: Google Gemini 2.5-flash
+- **VAD**: Silero (Windows compatible)
+
+**Wellness Tools:**
+
+- `save_checkin()` - Saves wellness data to JSON with timestamps
+- `retrieve_past_checkins()` - Loads and analyzes previous check-ins
+- Automatic greeting on connection
+- Trauma-informed conversation patterns
 
 [→ Backend Documentation](./backend/README.md)
 
 ### Frontend
 
-The frontend is based on [LiveKit's agent-starter-react](https://github.com/livekit-examples/agent-starter-react), providing a modern, beautiful UI for interacting with your voice agents.
+Next.js 15 application with real-time voice and chat interface.
 
 **Features:**
 
-- Real-time voice interaction with LiveKit Agents
-- Camera video streaming support
-- Screen sharing capabilities
-- Audio visualization and level monitoring
-- Light/dark theme switching
-- Highly customizable branding and UI
+- Real-time voice interaction with LiveKit
+- Live chat transcript (visible by default)
+- Wellness-themed branding (green accent, calming design)
+- Audio visualization and controls
+- "Start Wellness Check-In" button
+- Responsive, accessible UI
+
+**Customization:**
+- Branding configured in `app-config.ts`
+- Chat animations removed for immediate display
+- Session state optimized for wellness conversations
 
 [→ Frontend Documentation](./frontend/README.md)
 
@@ -61,18 +73,19 @@ The frontend is based on [LiveKit's agent-starter-react](https://github.com/live
 
 ### Prerequisites
 
-Make sure you have the following installed:
-
-- Python 3.9+ with [uv](https://docs.astral.sh/uv/) package manager
-- Node.js 18+ with pnpm
-- [LiveKit CLI](https://docs.livekit.io/home/cli/cli-setup) (optional but recommended)
-- [LiveKit Server](https://docs.livekit.io/home/self-hosting/local/) for local development
+- **Python 3.9+** with virtual environment support
+- **Node.js 18+** with pnpm (`npm install -g pnpm`)
+- **LiveKit Server** - Download from [LiveKit releases](https://github.com/livekit/livekit/releases)
+- **API Keys**:
+  - [Murf Falcon API key](https://murf.ai/api)
+  - [Google AI API key](https://makersuite.google.com/app/apikey)
+  - [Deepgram API key](https://deepgram.com/)
 
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
-cd falcon-tdova-nov25-livekit
+git clone https://github.com/Ayushnema704/Mindful-Health-Agent.git
+cd Mindful-Health-Agent
 ```
 
 ### 2. Backend Setup
@@ -80,29 +93,30 @@ cd falcon-tdova-nov25-livekit
 ```bash
 cd backend
 
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows:
+.\venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
+
 # Install dependencies
-uv sync
+pip install -e .
 
-# Copy environment file and configure
-cp .env.example .env.local
-
-# Edit .env.local with your credentials:
-# - LIVEKIT_URL
-# - LIVEKIT_API_KEY
-# - LIVEKIT_API_SECRET
-# - MURF_API_KEY (for Falcon TTS)
-# - GOOGLE_API_KEY (for Gemini LLM)
-# - DEEPGRAM_API_KEY (for Deepgram STT)
-
-# Download required models
-uv run python src/agent.py download-files
+# Create .env.local with your credentials
+# Copy from .env.example and fill in:
 ```
 
-For LiveKit Cloud users, you can automatically populate credentials:
-
+**backend/.env.local:**
 ```bash
-lk cloud auth
-lk app env -w -d .env.local
+LIVEKIT_URL=ws://127.0.0.1:7880
+LIVEKIT_API_KEY=devkey
+LIVEKIT_API_SECRET=secret
+GOOGLE_API_KEY=your_google_api_key_here
+MURF_API_KEY=your_murf_api_key_here
+DEEPGRAM_API_KEY=your_deepgram_api_key_here
 ```
 
 ### 3. Frontend Setup
@@ -113,102 +127,131 @@ cd frontend
 # Install dependencies
 pnpm install
 
-# Copy environment file and configure
-cp .env.example .env.local
+# Create .env.local (same LiveKit credentials as backend)
+```
 
-# Edit .env.local with the same LiveKit credentials
+**frontend/.env.local:**
+```bash
+LIVEKIT_API_KEY=devkey
+LIVEKIT_API_SECRET=secret
+LIVEKIT_URL=ws://127.0.0.1:7880
 ```
 
 ### 4. Run the Application
 
-#### Install livekit server
-
-```bash
-brew install livekit
-```
-
-You have two options:
-
-#### Option A: Use the convenience script (runs everything)
-
-```bash
-# From the root directory
-chmod +x start_app.sh
-./start_app.sh
-```
-
-This will start:
-
-- LiveKit Server (in dev mode)
-- Backend agent (listening for connections)
-- Frontend app (at http://localhost:3000)
-
-#### Option B: Run services individually
-
-```bash
+**Windows PowerShell:**
+```powershell
 # Terminal 1 - LiveKit Server
-livekit-server --dev
+.\livekit-server.exe --dev
 
 # Terminal 2 - Backend Agent
 cd backend
-uv run python src/agent.py dev
+.\venv\Scripts\python.exe src\agent.py dev
 
 # Terminal 3 - Frontend
 cd frontend
 pnpm dev
 ```
 
-Then open http://localhost:3000 in your browser!
+**macOS/Linux:**
+```bash
+# Terminal 1 - LiveKit Server
+livekit-server --dev
 
-## Daily Challenge Tasks
+# Terminal 2 - Backend Agent
+cd backend
+source venv/bin/activate
+python src/agent.py dev
 
-Each day, you'll receive a new task that builds upon your voice agent. The tasks will help you:
+# Terminal 3 - Frontend
+cd frontend
+pnpm dev
+```
 
-- Implement different personas and conversation styles
-- Add custom tools and capabilities
-- Integrate with external APIs
-- Build domain-specific agents (customer service, tutoring, etc.)
-- Optimize performance and user experience
+**Access the app:** Open http://localhost:3000 in your browser and click **"Start Wellness Check-In"**
 
-**Stay tuned for daily task announcements!**
+## How It Works
 
-## Documentation & Resources
+1. **Connect** - Click "Start Wellness Check-In" to begin
+2. **Greet** - Agent automatically greets you: "Hello! Welcome to MindfulMate. I'm here to help you with your daily wellness check-in. How are you feeling today?"
+3. **Converse** - Share your feelings through voice or chat
+4. **Track** - Agent saves your check-in data (mood, energy, sleep, stress) to `wellness_log.json`
+5. **Reflect** - Agent recalls your past check-ins to provide personalized insights
+
+### Sample Conversation
+
+```
+Agent: "Hello! Welcome to MindfulMate. How are you feeling today?"
+User: "I'm feeling really tired and stressed about my exams."
+Agent: "I hear you. Exam stress can be really exhausting..."
+      [Asks about sleep, energy levels, coping strategies]
+User: "I'd like to save this check-in."
+Agent: [Calls save_checkin() tool]
+      "I've saved your wellness check-in. Remember to take breaks!"
+```
+
+## Project Customizations
+
+MindfulMate includes several optimizations for wellness conversations:
+
+- **Simplified Greeting** - Skips automatic tool calls to reduce initial delay
+- **Chat Visibility** - Chat transcript visible by default (`chatOpen=true`)
+- **Animation Removal** - Removed framer-motion animations for immediate chat display
+- **Green Branding** - Calming wellness theme with `#10b981` accent color
+- **Persistent Storage** - JSON-based wellness log with timestamp tracking
+
+## Troubleshooting
+
+**Agent not responding?**
+- Ensure all three services are running (LiveKit server, backend agent, frontend)
+- Check that API keys are correct in `.env.local` files
+- Restart backend agent if it shut down
+
+**"Failed to fetch" error?**
+- Restart frontend to reload environment variables: `pnpm dev`
+- Verify `.env.local` exists in frontend directory
+
+**Chat not visible?**
+- Chat is now visible by default (fixed in `session-view.tsx`)
+
+## Resources
 
 - [Murf Falcon TTS Documentation](https://murf.ai/api/docs/text-to-speech/streaming)
 - [LiveKit Agents Documentation](https://docs.livekit.io/agents)
-- [Original Backend Template](https://github.com/livekit-examples/agent-starter-python)
-- [Original Frontend Template](https://github.com/livekit-examples/agent-starter-react)
+- [Google Gemini API](https://ai.google.dev/docs)
+- [Deepgram STT](https://developers.deepgram.com/)
 
-## Testing
+## Technical Stack
 
-The backend includes a comprehensive test suite:
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| TTS | Murf Falcon | Ultra-fast, natural voice synthesis |
+| STT | Deepgram nova-3 | High-accuracy speech recognition |
+| LLM | Google Gemini 2.5-flash | Conversation intelligence |
+| VAD | Silero | Voice activity detection |
+| Backend | LiveKit Agents (Python) | Agent orchestration |
+| Frontend | Next.js 15 + LiveKit React | Real-time UI |
+| Storage | JSON | Wellness check-in persistence |
 
-```bash
-cd backend
-uv run pytest
-```
+## Future Enhancements
 
-Learn more about testing voice agents in the [LiveKit testing documentation](https://docs.livekit.io/agents/build/testing/).
-
-## Contributing & Community
-
-This is a challenge repository, but we encourage collaboration and knowledge sharing!
-
-- Share your solutions and learnings on GitHub
-- Post about your progress on LinkedIn
-- Join the [LiveKit Community Slack](https://livekit.io/join-slack)
-- Connect with other challenge participants
+- 📈 Data visualization for wellness trends
+- 🔔 Reminder notifications for daily check-ins
+- 🎯 Goal setting and progress tracking
+- 🧘 Guided meditation and breathing exercises
+- 📱 Mobile app version
+- 🔒 User authentication and cloud storage
 
 ## License
 
-This project is based on MIT-licensed templates from LiveKit and includes integration with Murf Falcon. See individual LICENSE files in backend and frontend directories for details.
+This project is based on MIT-licensed templates from LiveKit. See individual LICENSE files in backend and frontend directories.
 
-## Have Fun!
+## Acknowledgments
 
-Remember, the goal is to learn, experiment, and build amazing voice AI agents. Don't hesitate to be creative and push the boundaries of what's possible with Murf Falcon and LiveKit!
-
-Good luck with the challenge!
+- Built for the **AI Voice Agents Challenge** by [murf.ai](https://murf.ai)
+- Based on [LiveKit's agent starter templates](https://github.com/livekit-examples)
+- Uses [Murf Falcon TTS](https://murf.ai/api) for voice synthesis
 
 ---
 
-Built for the AI Voice Agents Challenge by murf.ai
+**Day 3 Challenge Submission** | Built with ❤️ for wellness and mental health support
