@@ -1,19 +1,21 @@
-# MindfulMate - AI Wellness Companion
+# Active Recall Coach - Teach to Learn
 
-**Day 3 Challenge - Personal Wellness Voice Agent**
+**Day 4 Challenge - Educational Voice Agent with Multi-Mode Learning**
 
-MindfulMate is an empathetic AI wellness companion built with LiveKit Agents and Murf Falcon TTS. It provides personalized daily wellness check-ins, tracks your emotional and physical well-being, and offers supportive guidance through natural voice conversations.
+Active Recall Coach is an AI-powered tutoring agent that helps you master programming concepts through the proven "teach-the-tutor" method. Built with LiveKit Agents and Murf Falcon TTS, it supports three distinct learning modes to reinforce your understanding through active recall.
 
 ## About This Project
 
-Part of the **AI Voice Agents Challenge** by [murf.ai](https://murf.ai), MindfulMate demonstrates how AI voice agents can provide mental health support and wellness tracking through natural, empathetic conversations.
+Part of the **AI Voice Agents Challenge** by [murf.ai](https://murf.ai), Active Recall Coach demonstrates how AI voice agents can facilitate learning through interactive teaching, quizzing, and knowledge reinforcement.
 
 ### Key Features
 
-- 🎙️ **Natural Voice Conversations** - Ultra-fast, human-like responses using Murf Falcon TTS
-- 💚 **Wellness Check-ins** - Track mood, energy levels, sleep, and stress
-- 📊 **Historical Tracking** - Saves and retrieves past check-ins to provide personalized insights
-- 🤝 **Empathetic Support** - Designed with trauma-informed, non-judgmental conversation patterns
+- 🎙️ **Three Learning Modes** - Learn, Quiz, and Teach Back for comprehensive mastery
+- 📚 **Learn Mode** - Agent teaches programming concepts clearly (Matthew voice)
+- ❓ **Quiz Mode** - Test your knowledge with targeted questions (Alicia voice)
+- 🎓 **Teach Back Mode** - Explain concepts and receive feedback (Ken voice)
+- 🔄 **Seamless Mode Switching** - Switch between modes anytime during your session
+- 📊 **Progress Tracking** - Logs learning sessions for future analysis
 - 💬 **Real-time Chat** - Text-based chat alongside voice interaction
 
 ## Repository Structure
@@ -31,21 +33,24 @@ Mindful-Health-Agent/
 
 ### Backend
 
-The wellness companion agent built with LiveKit Agents framework.
+The active recall tutoring agent built with LiveKit Agents framework.
 
 **Technologies:**
 
-- **TTS**: Murf Falcon (en-US-matthew voice, Conversation style)
+- **TTS**: Murf Falcon (Matthew for Learn, Alicia for Quiz, Ken for Teach Back)
 - **STT**: Deepgram nova-3
 - **LLM**: Google Gemini 2.5-flash
 - **VAD**: Silero (Windows compatible)
 
-**Wellness Tools:**
+**Learning Tools:**
 
-- `save_checkin()` - Saves wellness data to JSON with timestamps
-- `retrieve_past_checkins()` - Loads and analyzes previous check-ins
-- Automatic greeting on connection
-- Trauma-informed conversation patterns
+- `get_concept(concept_id)` - Loads programming concepts from content library
+- `save_learning_session(mode, concept_id, notes)` - Tracks learning progress
+- Automatic mode-based behavior
+- Educational, encouraging conversation patterns
+
+**Content:**
+- `tutor_content.json` - Programming concepts (variables, loops, functions, conditionals)
 
 [→ Backend Documentation](./backend/README.md)
 
@@ -57,15 +62,16 @@ Next.js 15 application with real-time voice and chat interface.
 
 - Real-time voice interaction with LiveKit
 - Live chat transcript (visible by default)
-- Wellness-themed branding (green accent, calming design)
+- Education-themed branding (blue accent, learning-focused design)
 - Audio visualization and controls
-- "Start Wellness Check-In" button
+- "Start Learning Session" button
 - Responsive, accessible UI
+- Learning mode indicators
 
 **Customization:**
 - Branding configured in `app-config.ts`
-- Chat animations removed for immediate display
-- Session state optimized for wellness conversations
+- Landing page highlights three learning modes
+- Session state optimized for educational conversations
 
 [→ Frontend Documentation](./frontend/README.md)
 
@@ -84,8 +90,8 @@ Next.js 15 application with real-time voice and chat interface.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Ayushnema704/Mindful-Health-Agent.git
-cd Mindful-Health-Agent
+git clone https://github.com/Ayushnema704/Day_4_Active_Recall_Coach.git
+cd Day_4_Active_Recall_Coach
 ```
 
 ### 2. Backend Setup
@@ -168,37 +174,44 @@ cd frontend
 pnpm dev
 ```
 
-**Access the app:** Open http://localhost:3000 in your browser and click **"Start Wellness Check-In"**
+**Access the app:** Open http://localhost:3000 in your browser and click **"Start Learning Session"**
 
 ## How It Works
 
-1. **Connect** - Click "Start Wellness Check-In" to begin
-2. **Greet** - Agent automatically greets you: "Hello! Welcome to MindfulMate. I'm here to help you with your daily wellness check-in. How are you feeling today?"
-3. **Converse** - Share your feelings through voice or chat
-4. **Track** - Agent saves your check-in data (mood, energy, sleep, stress) to `wellness_log.json`
-5. **Reflect** - Agent recalls your past check-ins to provide personalized insights
+1. **Connect** - Click "Start Learning Session" to begin
+2. **Greet** - Agent welcomes you: "Hello! Welcome to your Active Recall Coach. I'm here to help you master programming concepts through three learning modes: Learn, Quiz, and Teach Back. Which mode would you like to start with?"
+3. **Choose Mode** - Select your learning mode through voice or chat
+4. **Learn** - Agent adapts behavior based on mode:
+   - **Learn Mode**: Explains concepts using summaries from content library
+   - **Quiz Mode**: Asks questions to test your understanding
+   - **Teach Back Mode**: Listens to your explanations and provides feedback
+5. **Switch Anytime** - Say "switch to quiz mode" or "let me teach this back" to change modes
+6. **Track Progress** - Learning sessions saved to `learning_log.json`
 
 ### Sample Conversation
 
 ```
-Agent: "Hello! Welcome to MindfulMate. How are you feeling today?"
-User: "I'm feeling really tired and stressed about my exams."
-Agent: "I hear you. Exam stress can be really exhausting..."
-      [Asks about sleep, energy levels, coping strategies]
-User: "I'd like to save this check-in."
-Agent: [Calls save_checkin() tool]
-      "I've saved your wellness check-in. Remember to take breaks!"
+Agent: "Which learning mode would you like to start with?"
+User: "Let's start with learn mode."
+Agent: [Calls get_concept("variables")]
+      "Great! Let me explain variables. Variables are containers that store data values..."
+User: "I think I understand. Can you quiz me on this?"
+Agent: "Switching to quiz mode! What is a variable and why is it useful?"
+User: [Explains variables]
+Agent: "Excellent explanation! You've captured the key concepts..."
+      [Calls save_learning_session("quiz", "variables")]
 ```
 
 ## Project Customizations
 
-MindfulMate includes several optimizations for wellness conversations:
+Active Recall Coach includes several optimizations for educational conversations:
 
-- **Simplified Greeting** - Skips automatic tool calls to reduce initial delay
+- **Multi-Voice Support** - Different Murf Falcon voices for each mode (Matthew, Alicia, Ken)
+- **Mode-Aware Agent** - Single agent adapts behavior based on user's chosen learning mode
 - **Chat Visibility** - Chat transcript visible by default (`chatOpen=true`)
-- **Animation Removal** - Removed framer-motion animations for immediate chat display
-- **Green Branding** - Calming wellness theme with `#10b981` accent color
-- **Persistent Storage** - JSON-based wellness log with timestamp tracking
+- **Blue Branding** - Educational theme with `#3b82f6` accent color
+- **Content Library** - JSON-based concept library (`tutor_content.json`)
+- **Progress Tracking** - Learning sessions logged with mode, concept, and notes
 
 ## Troubleshooting
 
@@ -214,6 +227,14 @@ MindfulMate includes several optimizations for wellness conversations:
 **Chat not visible?**
 - Chat is now visible by default (fixed in `session-view.tsx`)
 
+**Microphone permission denied?**
+- Allow microphone access in your browser settings
+- Try using HTTPS or localhost (required for microphone access)
+
+**Agent not switching modes?**
+- Be explicit: "Switch to quiz mode" or "I want to try teach back mode"
+- Agent will confirm the mode switch
+
 ## Resources
 
 - [Murf Falcon TTS Documentation](https://murf.ai/api/docs/text-to-speech/streaming)
@@ -225,22 +246,24 @@ MindfulMate includes several optimizations for wellness conversations:
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| TTS | Murf Falcon | Ultra-fast, natural voice synthesis |
+| TTS | Murf Falcon | Multi-voice support (Matthew, Alicia, Ken) |
 | STT | Deepgram nova-3 | High-accuracy speech recognition |
-| LLM | Google Gemini 2.5-flash | Conversation intelligence |
+| LLM | Google Gemini 2.5-flash | Educational conversation intelligence |
 | VAD | Silero | Voice activity detection |
-| Backend | LiveKit Agents (Python) | Agent orchestration |
-| Frontend | Next.js 15 + LiveKit React | Real-time UI |
-| Storage | JSON | Wellness check-in persistence |
+| Backend | LiveKit Agents (Python) | Agent orchestration with mode switching |
+| Frontend | Next.js 15 + LiveKit React | Real-time learning UI |
+| Storage | JSON | Learning sessions & concept library |
 
 ## Future Enhancements
 
-- 📈 Data visualization for wellness trends
-- 🔔 Reminder notifications for daily check-ins
-- 🎯 Goal setting and progress tracking
-- 🧘 Guided meditation and breathing exercises
+- 📊 Mastery scoring system (track concept understanding over time)
+- 🎯 Personalized learning paths based on weakest concepts
+- 🔢 Teach-back evaluator with automated scoring (0-100)
+- 💾 Database integration (SQLite/MongoDB) for richer data
+- 📚 Expanded content library with more programming topics
+- 🏆 Achievement system and learning streaks
 - 📱 Mobile app version
-- 🔒 User authentication and cloud storage
+- 🔒 User authentication and progress sync
 
 ## License
 
@@ -254,4 +277,4 @@ This project is based on MIT-licensed templates from LiveKit. See individual LIC
 
 ---
 
-**Day 3 Challenge Submission** | Built with ❤️ for wellness and mental health support
+**Day 4 Challenge Submission** | Built with 📚 for education and active learning
