@@ -1,0 +1,26 @@
+[
+  {
+    "id": "variables",
+    "title": "Variables in Programming",
+    "summary": "Variables are containers that store data values in your program. Think of them like labeled boxes where you can put information and retrieve it later. For example, in Python you can write 'name = John' to store the text 'John' in a variable called 'name'. Variables are useful because they let you reuse values throughout your code without retyping them, and they make your code more flexible and easier to update.",
+    "sample_question": "What is a variable and why is it useful in programming?"
+  },
+  {
+    "id": "loops",
+    "title": "Loops in Programming",
+    "summary": "Loops are programming structures that let you repeat an action multiple times without writing the same code over and over. There are two main types: 'for loops' which repeat a set number of times (like 'repeat this 10 times'), and 'while loops' which keep repeating as long as a condition is true (like 'keep asking for input until the user types quit'). Loops save you from writing repetitive code and make it easy to process lists or perform tasks multiple times.",
+    "sample_question": "Explain the difference between a for loop and a while loop, and give an example of when you'd use each."
+  },
+  {
+    "id": "functions",
+    "title": "Functions in Programming",
+    "summary": "Functions are reusable blocks of code that perform a specific task. You define a function once with a name and then you can 'call' it whenever you need that task done. Functions can take inputs (called parameters) and return outputs. For example, you might create a function called 'calculate_area' that takes width and height as inputs and returns the area. Functions help organize your code, avoid repetition, and make programs easier to understand and maintain.",
+    "sample_question": "What is a function and how does it help make your code better?"
+  },
+  {
+    "id": "conditionals",
+    "title": "Conditional Statements",
+    "summary": "Conditional statements allow your program to make decisions and execute different code based on whether certain conditions are true or false. The most common is the 'if statement' which says 'if this condition is true, do this action'. You can also add 'else' for what to do when the condition is false, and 'elif' (else if) for checking multiple conditions. For example, 'if age is greater than 18, print you can vote, else print you cannot vote yet'. Conditionals give your programs the power to respond differently to different situations.",
+    "sample_question": "How do conditional statements help programs make decisions? Give a real-world example."
+  }
+]

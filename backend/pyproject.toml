@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mindfulmate"
+name = "active-recall-coach"
 version = "1.0.0"
-description = "MindfulMate - Your AI-powered wellness companion for daily check-ins and mindful living"
+description = "Active Recall Coach - Master programming concepts through Learn, Quiz, and Teach Back modes"
 requires-python = ">=3.9"
 
 dependencies = [

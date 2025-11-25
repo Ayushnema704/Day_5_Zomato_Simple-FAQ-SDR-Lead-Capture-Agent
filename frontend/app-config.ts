@@ -20,9 +20,9 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
-  companyName: 'MindfulMate',
-  pageTitle: 'MindfulMate - Your Wellness Companion',
-  pageDescription: 'Start your daily wellness check-in with your AI-powered mindfulness companion',
+  companyName: 'Active Recall Coach',
+  pageTitle: 'Active Recall Coach - Teach to Learn',
+  pageDescription: 'Master programming concepts through active learning: Learn, Quiz, and Teach Back modes',
 
   supportsChatInput: true,
   supportsVideoInput: true,
@@ -30,10 +30,10 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   isPreConnectBufferEnabled: true,
 
   logo: '/lk-logo.svg',
-  accent: '#10b981',
+  accent: '#3b82f6',
   logoDark: '/lk-logo-dark.svg',
-  accentDark: '#34d399',
-  startButtonText: 'Start Wellness Check-In',
+  accentDark: '#60a5fa',
+  startButtonText: 'Start Learning Session',
 
   // for LiveKit Cloud Sandbox
   sandboxId: undefined,

@@ -25,147 +25,158 @@ logger = logging.getLogger("agent")
 
 load_dotenv(".env.local")
 
-# Path to the wellness log JSON file
-WELLNESS_LOG_PATH = "wellness_log.json"
+# Path to the tutor content JSON file
+TUTOR_CONTENT_PATH = "tutor_content.json"
+LEARNING_LOG_PATH = "learning_log.json"
 
 
-def load_wellness_log():
-    """Load the wellness log from JSON file."""
-    if os.path.exists(WELLNESS_LOG_PATH):
+def load_tutor_content():
+    """Load the tutor content from JSON file."""
+    if os.path.exists(TUTOR_CONTENT_PATH):
         try:
-            with open(WELLNESS_LOG_PATH, "r") as f:
+            with open(TUTOR_CONTENT_PATH, "r") as f:
                 return json.load(f)
         except json.JSONDecodeError:
-            logger.warning("Wellness log file is corrupted, starting fresh")
+            logger.warning("Tutor content file is corrupted")
             return []
     return []
 
 
-def save_wellness_log(log_data):
-    """Save the wellness log to JSON file."""
+def load_learning_log():
+    """Load the learning log from JSON file."""
+    if os.path.exists(LEARNING_LOG_PATH):
+        try:
+            with open(LEARNING_LOG_PATH, "r") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            logger.warning("Learning log file is corrupted, starting fresh")
+            return []
+    return []
+
+
+def save_learning_log(log_data):
+    """Save the learning log to JSON file."""
     try:
-        with open(WELLNESS_LOG_PATH, "w") as f:
+        with open(LEARNING_LOG_PATH, "w") as f:
             json.dump(log_data, f, indent=2)
-        logger.info("Wellness log saved successfully")
+        logger.info("Learning log saved successfully")
     except Exception as e:
-        logger.error(f"Error saving wellness log: {e}")
+        logger.error(f"Error saving learning log: {e}")
 
 
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
-            instructions="""You are a supportive Health & Wellness Voice Companion. Your role is to help users check in with themselves daily about their mood, energy, and goals. You are warm, empathetic, and grounded - not a medical professional, just a supportive friend.
+            instructions="""You are an Active Recall Coach - a friendly and encouraging tutor that uses the "teach-the-tutor" method to help users master programming concepts through active learning.
 
-Your conversation flow:
-1. Greet the user warmly. If they've checked in before, mention something from their previous check-in using the retrieve_past_checkins tool first.
-2. Ask about their current mood and energy level. Examples: "How are you feeling today?" or "What's your energy like right now?"
-3. Ask about any stress or concerns they might have, but keep it light and supportive.
-4. Ask what 1-3 things they'd like to accomplish today - could be work, personal care, or anything they want to focus on.
-5. Offer simple, realistic, non-medical advice based on what they share. Examples:
-   - Break large goals into smaller steps
-   - Suggest short breaks or a 5-minute walk
-   - Encourage self-care activities
-   - Provide grounding techniques if they seem stressed
-6. Before ending, provide a brief recap of their mood and objectives. Ask "Does this sound right?"
-7. Once they confirm, use the save_checkin tool to save the session data.
-8. Close with encouraging words.
+You have access to programming concepts (variables, loops, functions, conditionals) through the get_concept tool.
 
-Important guidelines:
-- Be conversational and natural, not robotic or scripted
-- NEVER provide medical advice or diagnosis
-- Keep suggestions small, actionable, and realistic
-- Use warm, supportive language
-- Your responses should be concise and easy to understand via voice
-- Avoid complex formatting, emojis, or asterisks
-- Be genuinely curious about their wellbeing
+Your role is to support THREE learning modes that the user can switch between at any time:
 
-Remember: You're helping them reflect and set intentions, not solving all their problems.""",
+**1. LEARN MODE** - You are the teacher (Use voice: Matthew, Conversation style)
+- Explain concepts clearly and conversationally using the concept summary
+- Break down complex ideas into simple terms
+- Give real-world examples
+- Check for understanding: "Does that make sense?" or "Would you like me to explain anything further?"
+- Users can ask you to explain any concept from the content
+
+**2. QUIZ MODE** - You test the learner (Use voice: Alicia, Conversation style)
+- Ask questions about concepts using the sample_question from the content
+- Wait for their answer
+- Provide encouraging feedback whether right or wrong
+- If wrong, gently correct and explain the right answer
+- Keep it conversational and supportive, not intimidating
+
+**3. TEACH BACK MODE** - The learner teaches you (Use voice: Ken, Conversation style)
+- Ask the user to explain a concept back to you
+- Listen actively to their explanation
+- Give qualitative feedback: "That's a great explanation!" or "You've got the main idea, but let me clarify one point..."
+- Encourage them even if they struggle
+- Point out what they got right before mentioning what they missed
+
+**Conversation Flow:**
+1. Greet the user warmly and ask which learning mode they'd like to start with
+2. Once they choose a mode (learn, quiz, or teach_back), use get_concept to load a programming concept
+3. Execute that mode's behavior as described above
+4. After each interaction, ask if they want to continue with this mode, switch modes, or try a different concept
+5. Users can say things like "switch to quiz mode" or "let me try teaching it back" at any time
+6. Log their progress using save_learning_session when they complete activities
+
+**Important Guidelines:**
+- Be encouraging and positive - learning should feel safe and fun
+- Keep explanations concise and voice-friendly (no long walls of text)
+- Use natural, conversational language
+- Avoid complex formatting or special characters
+- Adapt your teaching style based on their responses
+- Celebrate small wins and progress
+- Make it clear they can switch modes anytime
+
+Remember: The best way to learn is to teach. Help them master concepts through active recall!""",
         )
 
     @function_tool
-    async def save_checkin(
+    async def get_concept(
         self,
         context: RunContext,
-        mood: str,
-        energy_level: str,
-        objectives: str,
-        stress_factors: Optional[str] = None,
+        concept_id: str,
     ):
-        """Save the current wellness check-in to the JSON log.
-        
-        Call this tool after the user has shared their mood, energy, and daily objectives, and after you've provided a recap that they confirmed.
+        """Get a programming concept by its ID to teach, quiz, or have the user teach back.
         
         Args:
-            mood: The user's self-reported mood (e.g., "happy", "tired", "stressed", "good")
-            energy_level: The user's energy level (e.g., "high", "medium", "low", "exhausted")
-            objectives: The 1-3 things the user wants to accomplish today (comma-separated or descriptive text)
-            stress_factors: Optional description of any stress or concerns mentioned
+            concept_id: The ID of the concept (e.g., "variables", "loops", "functions", "conditionals")
         """
-        logger.info(f"Saving check-in - Mood: {mood}, Energy: {energy_level}")
+        logger.info(f"Loading concept: {concept_id}")
+        
+        # Load tutor content
+        content = load_tutor_content()
+        
+        # Find the concept
+        concept = next((c for c in content if c["id"] == concept_id), None)
+        
+        if not concept:
+            return f"Concept '{concept_id}' not found. Available concepts: variables, loops, functions, conditionals"
+        
+        return f"Concept: {concept['title']}\n\nSummary: {concept['summary']}\n\nSample Question: {concept['sample_question']}"
+
+    @function_tool
+    async def save_learning_session(
+        self,
+        context: RunContext,
+        mode: str,
+        concept_id: str,
+        notes: Optional[str] = None,
+    ):
+        """Save a learning session to track the user's progress.
+        
+        Call this when the user completes an activity in any mode (learn, quiz, or teach_back).
+        
+        Args:
+            mode: The learning mode used (learn, quiz, or teach_back)
+            concept_id: The concept ID that was practiced
+            notes: Optional notes about the session (e.g., "struggled with loop syntax" or "explained variables clearly")
+        """
+        logger.info(f"Saving learning session - Mode: {mode}, Concept: {concept_id}")
         
         # Load existing log
-        log_data = load_wellness_log()
+        log_data = load_learning_log()
         
         # Create new entry
         entry = {
             "timestamp": datetime.now().isoformat(),
             "date": datetime.now().strftime("%Y-%m-%d"),
             "time": datetime.now().strftime("%H:%M:%S"),
-            "mood": mood,
-            "energy_level": energy_level,
-            "objectives": objectives,
-            "stress_factors": stress_factors,
-            "summary": f"Mood: {mood}, Energy: {energy_level}. Goals: {objectives}"
+            "mode": mode,
+            "concept_id": concept_id,
+            "notes": notes,
         }
         
         # Add to log
         log_data.append(entry)
         
         # Save to file
-        save_wellness_log(log_data)
+        save_learning_log(log_data)
         
-        return f"Check-in saved successfully! Your wellness data has been recorded for {entry['date']}."
-
-    @function_tool
-    async def retrieve_past_checkins(
-        self,
-        context: RunContext,
-        days: int = 7
-    ):
-        """Retrieve past wellness check-ins to reference in the conversation.
-        
-        Use this tool at the START of the conversation to see if the user has checked in before, so you can reference their previous mood, energy, or goals.
-        
-        Args:
-            days: Number of recent days to retrieve (default 7)
-        """
-        logger.info(f"Retrieving past check-ins (last {days} days)")
-        
-        # Load wellness log
-        log_data = load_wellness_log()
-        
-        if not log_data:
-            return "No previous check-ins found. This appears to be the user's first check-in."
-        
-        # Get the most recent entries
-        recent_entries = log_data[-days:] if len(log_data) > days else log_data
-        
-        # Get the most recent check-in
-        last_checkin = recent_entries[-1]
-        
-        # Create a summary
-        summary = f"Last check-in was on {last_checkin['date']} at {last_checkin['time']}.\n"
-        summary += f"Previous mood: {last_checkin['mood']}\n"
-        summary += f"Previous energy level: {last_checkin['energy_level']}\n"
-        summary += f"Previous objectives: {last_checkin['objectives']}\n"
-        
-        if last_checkin.get('stress_factors'):
-            summary += f"They mentioned stress about: {last_checkin['stress_factors']}\n"
-        
-        # Add count of recent check-ins
-        summary += f"\nTotal check-ins in the log: {len(log_data)}"
-        
-        return summary
+        return f"Learning session saved! You practiced '{concept_id}' in {mode} mode."
 
 
 def prewarm(proc: JobProcess):
@@ -254,7 +265,7 @@ async def entrypoint(ctx: JobContext):
     await ctx.connect()
     
     # Send initial greeting when user connects
-    await session.say("Hello! Welcome to MindfulMate. I'm here to help you with your daily wellness check-in. How are you feeling today?", allow_interruptions=True)
+    await session.say("Hello! Welcome to your Active Recall Coach. I'm here to help you master programming concepts through three learning modes: Learn mode where I teach you, Quiz mode where I test your knowledge, and Teach Back mode where you explain concepts to me. Which mode would you like to start with?", allow_interruptions=True)
 
 
 if __name__ == "__main__":

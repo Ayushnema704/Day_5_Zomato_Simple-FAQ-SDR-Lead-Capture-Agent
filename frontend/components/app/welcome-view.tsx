@@ -10,20 +10,34 @@ function WelcomeImage() {
       xmlns="http://www.w3.org/2000/svg"
       className="text-primary mb-4 size-16"
     >
-      {/* Heart with pulse line - Health & Wellness icon */}
+      {/* Book with lightbulb - Learning & Education icon */}
       <path
-        d="M32 52C32 52 8 38 8 22C8 18.8174 9.26428 15.7652 11.5147 13.5147C13.7652 11.2643 16.8174 10 20 10C24 10 27.5 12 32 16C36.5 12 40 10 44 10C47.1826 10 50.2348 11.2643 52.4853 13.5147C54.7357 15.7652 56 18.8174 56 22C56 38 32 52 32 52Z"
+        d="M10 8C10 6.89543 10.8954 6 12 6H52C53.1046 6 54 6.89543 54 8V52C54 53.1046 53.1046 54 52 54H12C10.8954 54 10 53.1046 10 52V8Z"
+        fill="currentColor"
+        fillOpacity="0.15"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <path
+        d="M10 18H54M32 6V54"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <circle
+        cx="44"
+        cy="40"
+        r="8"
         fill="currentColor"
         fillOpacity="0.2"
         stroke="currentColor"
         strokeWidth="2"
       />
       <path
-        d="M8 32L14 32L18 26L22 38L26 32L32 32"
+        d="M44 35V42M41 42H47"
         stroke="currentColor"
-        strokeWidth="2.5"
+        strokeWidth="2"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   );
@@ -45,16 +59,17 @@ export const WelcomeView = ({
         <WelcomeImage />
 
         <h1 className="text-foreground text-3xl font-bold mb-2 mt-4">
-          Health & Wellness Companion
+          Active Recall Coach
         </h1>
 
         <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
-          Your supportive daily check-in companion for mood, energy, and goals
+          Master programming through three powerful learning modes
         </p>
         
         <p className="text-muted-foreground max-w-md pt-2 text-sm leading-5">
-          Take a moment to reflect on how you're feeling today. Share your mood, energy level, 
-          and what you'd like to accomplish. Let's make today great together! 💚
+          📚 <strong>Learn Mode:</strong> I'll teach you concepts clearly<br/>
+          ❓ <strong>Quiz Mode:</strong> Test your knowledge with questions<br/>
+          🎓 <strong>Teach Back Mode:</strong> Explain concepts to me and get feedback
         </p>
 
         <Button variant="primary" size="lg" onClick={onStartCall} className="mt-6 w-64 font-mono">

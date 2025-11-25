@@ -1,0 +1,18 @@
+[
+  {
+    "timestamp": "2025-11-25T21:34:33.469960",
+    "date": "2025-11-25",
+    "time": "21:34:33",
+    "mode": "learn",
+    "concept_id": "loops",
+    "notes": "User completed learning about loops and do-while loops."
+  },
+  {
+    "timestamp": "2025-11-25T21:38:41.583274",
+    "date": "2025-11-25",
+    "time": "21:38:41",
+    "mode": "quiz",
+    "concept_id": "loops",
+    "notes": "User answered a quiz question on loops. Understood basic difference, needed clarification on examples."
+  }
+]
