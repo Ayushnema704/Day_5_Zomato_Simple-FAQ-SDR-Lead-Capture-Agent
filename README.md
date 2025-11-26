@@ -1,56 +1,58 @@
-# Active Recall Coach - Teach to Learn
+# Zomato SDR - AI-Powered FAQ & Lead Capture Agent
 
-**Day 4 Challenge - Educational Voice Agent with Multi-Mode Learning**
+**Day 5 Challenge - Simple FAQ SDR Voice Agent with Lead Capture**
 
-Active Recall Coach is an AI-powered tutoring agent that helps you master programming concepts through the proven "teach-the-tutor" method. Built with LiveKit Agents and Murf Falcon TTS, it supports three distinct learning modes to reinforce your understanding through active recall.
+An intelligent Sales Development Representative (SDR) voice agent for Zomato that answers FAQs about the platform and captures qualified leads through natural conversation. Built with LiveKit Agents and Murf Falcon TTS for ultra-fast voice interactions.
 
 ## About This Project
 
-Part of the **AI Voice Agents Challenge** by [murf.ai](https://murf.ai), Active Recall Coach demonstrates how AI voice agents can facilitate learning through interactive teaching, quizzing, and knowledge reinforcement.
+Part of the **AI Voice Agents Challenge** by [murf.ai](https://murf.ai), this project demonstrates how AI voice agents can handle customer inquiries, answer FAQs from a knowledge base, and capture lead information organically through conversation.
 
 ### Key Features
 
-- 🎙️ **Three Learning Modes** - Learn, Quiz, and Teach Back for comprehensive mastery
-- 📚 **Learn Mode** - Agent teaches programming concepts clearly (Matthew voice)
-- ❓ **Quiz Mode** - Test your knowledge with targeted questions (Alicia voice)
-- 🎓 **Teach Back Mode** - Explain concepts and receive feedback (Ken voice)
-- 🔄 **Seamless Mode Switching** - Switch between modes anytime during your session
-- 📊 **Progress Tracking** - Logs learning sessions for future analysis
+- 🎙️ **Voice-First SDR** - Natural conversational sales representative
+- 📚 **FAQ Knowledge Base** - Comprehensive Zomato product information in JSON
+- 🎯 **Lead Qualification** - Captures name, email, company, role, and use case
+- 💾 **Lead Persistence** - Saves qualified leads to JSON database
+- 🔍 **Smart FAQ Search** - Semantic search through Zomato's services and pricing
 - 💬 **Real-time Chat** - Text-based chat alongside voice interaction
+- ⚡ **Lightning Fast** - Powered by Murf Falcon TTS (fastest TTS API)
 
 ## Repository Structure
 
 ```
-Mindful-Health-Agent/
-├── backend/          # Python agent with wellness tracking logic
+Day_5_Zomato_SDR/
+├── backend/              # Python agent with SDR logic
 │   ├── src/
-│   │   └── agent.py  # Main agent with wellness tools
-│   └── wellness_log.json  # Persistent check-in storage
-├── frontend/         # Next.js UI with voice interface
-├── start_app.ps1     # Windows startup script
-└── README.md         # This file
+│   │   └── agent.py      # Main SDR agent with FAQ and lead capture
+│   ├── zomato_faq.json   # Knowledge base for Zomato products/services
+│   └── leads.json        # Captured lead storage
+├── frontend/             # Next.js UI with Zomato branding
+├── start_app.ps1         # Windows startup script
+├── start_app.sh          # Unix/Mac startup script
+└── README.md             # This file
 ```
 
 ### Backend
 
-The active recall tutoring agent built with LiveKit Agents framework.
+The SDR voice agent built with LiveKit Agents framework.
 
 **Technologies:**
 
-- **TTS**: Murf Falcon (Matthew for Learn, Alicia for Quiz, Ken for Teach Back)
-- **STT**: Deepgram nova-3
+- **TTS**: Murf Falcon (ultra-fast voice synthesis)
+- **STT**: Deepgram Nova-3
 - **LLM**: Google Gemini 2.5-flash
 - **VAD**: Silero (Windows compatible)
 
-**Learning Tools:**
+**SDR Tools:**
 
-- `get_concept(concept_id)` - Loads programming concepts from content library
-- `save_learning_session(mode, concept_id, notes)` - Tracks learning progress
-- Automatic mode-based behavior
-- Educational, encouraging conversation patterns
+- `search_faq(query)` - Searches Zomato FAQ knowledge base
+- `capture_lead(name, email, company, role, use_case, team_size, timeline, notes)` - Saves qualified leads
+- Consultative conversation flow
+- Natural lead qualification
 
-**Content:**
-- `tutor_content.json` - Programming concepts (variables, loops, functions, conditionals)
+**Knowledge Base:**
+- `zomato_faq.json` - Comprehensive FAQ about Zomato's services, pricing, and features
 
 [→ Backend Documentation](./backend/README.md)
 
@@ -61,17 +63,17 @@ Next.js 15 application with real-time voice and chat interface.
 **Features:**
 
 - Real-time voice interaction with LiveKit
-- Live chat transcript (visible by default)
-- Education-themed branding (blue accent, learning-focused design)
+- Live chat transcript for conversation tracking
+- Zomato-themed branding (red accent, food-focused design)
 - Audio visualization and controls
-- "Start Learning Session" button
+- "Talk to Zomato" CTA button
 - Responsive, accessible UI
-- Learning mode indicators
+- Professional SDR interface
 
 **Customization:**
 - Branding configured in `app-config.ts`
-- Landing page highlights three learning modes
-- Session state optimized for educational conversations
+- Landing page highlights Zomato partnership opportunities
+- Session state optimized for sales conversations
 
 [→ Frontend Documentation](./frontend/README.md)
 
@@ -90,8 +92,8 @@ Next.js 15 application with real-time voice and chat interface.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Ayushnema704/Day_4_Active_Recall_Coach.git
-cd Day_4_Active_Recall_Coach
+git clone https://github.com/Ayushnema704/Day_5_Zomato_Simple-FAQ-SDR-Lead-Capture-Agent.git
+cd Day_5_Zomato_Simple-FAQ-SDR-Lead-Capture-Agent
 ```
 
 ### 2. Backend Setup
@@ -174,44 +176,49 @@ cd frontend
 pnpm dev
 ```
 
-**Access the app:** Open http://localhost:3000 in your browser and click **"Start Learning Session"**
+**Access the app:** Open http://localhost:3000 in your browser and click **"Talk to Zomato"**
 
 ## How It Works
 
-1. **Connect** - Click "Start Learning Session" to begin
-2. **Greet** - Agent welcomes you: "Hello! Welcome to your Active Recall Coach. I'm here to help you master programming concepts through three learning modes: Learn, Quiz, and Teach Back. Which mode would you like to start with?"
-3. **Choose Mode** - Select your learning mode through voice or chat
-4. **Learn** - Agent adapts behavior based on mode:
-   - **Learn Mode**: Explains concepts using summaries from content library
-   - **Quiz Mode**: Asks questions to test your understanding
-   - **Teach Back Mode**: Listens to your explanations and provides feedback
-5. **Switch Anytime** - Say "switch to quiz mode" or "let me teach this back" to change modes
-6. **Track Progress** - Learning sessions saved to `learning_log.json`
+1. **Connect** - Click "Talk to Zomato" to begin conversation
+2. **Greeting** - SDR agent welcomes you: "Hello! Thanks for reaching out to Zomato. I'm here to help you explore how we can support your business. What brings you here today?"
+3. **Discovery** - Agent asks about your business needs and challenges
+4. **FAQ Answering** - When you ask questions about Zomato:
+   - Agent calls `search_faq(query)` to find relevant information
+   - Provides accurate answers from knowledge base
+   - Never makes up information
+5. **Lead Qualification** - Throughout conversation, agent organically captures:
+   - Name, Email, Company (essential)
+   - Role, Use case, Team size, Timeline, Additional notes
+6. **Lead Capture** - When sufficient information is gathered, agent saves lead to `leads.json`
+7. **Next Steps** - Agent confirms interest and provides appropriate next steps
 
 ### Sample Conversation
 
 ```
-Agent: "Which learning mode would you like to start with?"
-User: "Let's start with learn mode."
-Agent: [Calls get_concept("variables")]
-      "Great! Let me explain variables. Variables are containers that store data values..."
-User: "I think I understand. Can you quiz me on this?"
-Agent: "Switching to quiz mode! What is a variable and why is it useful?"
-User: [Explains variables]
-Agent: "Excellent explanation! You've captured the key concepts..."
-      [Calls save_learning_session("quiz", "variables")]
+Agent: "Hello! Thanks for reaching out to Zomato. What brings you here today?"
+User: "I own a restaurant and want to know about your delivery services."
+Agent: "Great! I'd love to help. What's the name of your restaurant?"
+User: "It's called Spartan Group of Hotels."
+Agent: [Captures company name]
+      "And may I have your name and the best email to reach you?"
+User: "I'm Michael Scott, email is michael@spartanhotels.com"
+Agent: [Calls search_faq("delivery services")]
+      "Thanks Michael! For delivery, Zomato provides..."
+Agent: [Later, calls capture_lead(...) with all collected information]
+      "I've captured all your information. Our team will reach out within 24 hours!"
 ```
 
 ## Project Customizations
 
-Active Recall Coach includes several optimizations for educational conversations:
+Zomato SDR includes several optimizations for sales conversations:
 
-- **Multi-Voice Support** - Different Murf Falcon voices for each mode (Matthew, Alicia, Ken)
-- **Mode-Aware Agent** - Single agent adapts behavior based on user's chosen learning mode
-- **Chat Visibility** - Chat transcript visible by default (`chatOpen=true`)
-- **Blue Branding** - Educational theme with `#3b82f6` accent color
-- **Content Library** - JSON-based concept library (`tutor_content.json`)
-- **Progress Tracking** - Learning sessions logged with mode, concept, and notes
+- **Consultative Approach** - Focuses on understanding needs before pitching
+- **FAQ Knowledge Base** - Comprehensive Zomato product information
+- **Lead Persistence** - All qualified leads saved to JSON with timestamp
+- **Zomato Branding** - Red theme matching Zomato's brand identity
+- **Natural Conversation** - Captures information organically, not through forms
+- **Smart FAQ Search** - Semantic search through services, pricing, and features
 
 ## Troubleshooting
 
@@ -246,24 +253,26 @@ Active Recall Coach includes several optimizations for educational conversations
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| TTS | Murf Falcon | Multi-voice support (Matthew, Alicia, Ken) |
-| STT | Deepgram nova-3 | High-accuracy speech recognition |
-| LLM | Google Gemini 2.5-flash | Educational conversation intelligence |
+| TTS | Murf Falcon | Ultra-fast, natural voice synthesis |
+| STT | Deepgram Nova-3 | High-accuracy speech recognition |
+| LLM | Google Gemini 2.5-flash | Sales conversation intelligence |
 | VAD | Silero | Voice activity detection |
-| Backend | LiveKit Agents (Python) | Agent orchestration with mode switching |
-| Frontend | Next.js 15 + LiveKit React | Real-time learning UI |
-| Storage | JSON | Learning sessions & concept library |
+| Backend | LiveKit Agents (Python) | SDR agent orchestration |
+| Frontend | Next.js 15 + LiveKit React | Real-time sales UI |
+| Storage | JSON | Lead database & FAQ knowledge base |
 
 ## Future Enhancements
 
-- 📊 Mastery scoring system (track concept understanding over time)
-- 🎯 Personalized learning paths based on weakest concepts
-- 🔢 Teach-back evaluator with automated scoring (0-100)
-- 💾 Database integration (SQLite/MongoDB) for richer data
-- 📚 Expanded content library with more programming topics
-- 🏆 Achievement system and learning streaks
+- 📊 Lead scoring and qualification pipeline
+- 🔗 CRM integration (Salesforce, HubSpot)
+- 📧 Automated follow-up email generation
+- 💾 Database integration (PostgreSQL/MongoDB) for scalability
+- 📈 Analytics dashboard for lead metrics
+- 🎯 A/B testing for conversation flows
 - 📱 Mobile app version
-- 🔒 User authentication and progress sync
+- 🔒 User authentication and admin panel
+- 🌐 Multi-language support for global markets
+- 🤖 Sentiment analysis for conversation quality
 
 ## License
 
@@ -274,7 +283,8 @@ This project is based on MIT-licensed templates from LiveKit. See individual LIC
 - Built for the **AI Voice Agents Challenge** by [murf.ai](https://murf.ai)
 - Based on [LiveKit's agent starter templates](https://github.com/livekit-examples)
 - Uses [Murf Falcon TTS](https://murf.ai/api) for voice synthesis
+- Zomato is a trademark of Zomato Ltd. (This is an educational demo project)
 
 ---
 
-**Day 4 Challenge Submission** | Built with 📚 for education and active learning
+**Day 5 Challenge Submission** | Built with 🍽️ for sales and customer engagement

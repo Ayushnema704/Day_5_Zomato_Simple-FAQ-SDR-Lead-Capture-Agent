@@ -1,4 +1,4 @@
-export interface AppConfig {
+﻿export interface AppConfig {
   pageTitle: string;
   pageDescription: string;
   companyName: string;
@@ -20,22 +20,22 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
-  companyName: 'Active Recall Coach',
-  pageTitle: 'Active Recall Coach - Teach to Learn',
-  pageDescription: 'Master programming concepts through active learning: Learn, Quiz, and Teach Back modes',
-
+  companyName: 'Zomato',
+  pageTitle: 'Zomato - Partner with Us',
+  pageDescription: 'Connect with our AI-powered SDR to discover how Zomato can help grow your restaurant business',
   supportsChatInput: true,
   supportsVideoInput: true,
   supportsScreenShare: true,
   isPreConnectBufferEnabled: true,
 
-  logo: '/lk-logo.svg',
-  accent: '#3b82f6',
-  logoDark: '/lk-logo-dark.svg',
-  accentDark: '#60a5fa',
-  startButtonText: 'Start Learning Session',
+  logo: '/logo.png',
+  accent: '#E23744',
+  logoDark: '/logo.png',
+  accentDark: '#ff4d5a',
+  startButtonText: 'Talk to Zomato',
 
   // for LiveKit Cloud Sandbox
   sandboxId: undefined,
   agentName: undefined,
 };
+

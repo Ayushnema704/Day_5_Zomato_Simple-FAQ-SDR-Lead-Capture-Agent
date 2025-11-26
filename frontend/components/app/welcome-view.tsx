@@ -1,45 +1,19 @@
-import { Button } from '@/components/livekit/button';
+﻿import { Button } from '@/components/livekit/button';
+import Image from 'next/image';
 
 function WelcomeImage() {
   return (
-    <svg
-      width="64"
-      height="64"
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="text-primary mb-4 size-16"
-    >
-      {/* Book with lightbulb - Learning & Education icon */}
-      <path
-        d="M10 8C10 6.89543 10.8954 6 12 6H52C53.1046 6 54 6.89543 54 8V52C54 53.1046 53.1046 54 52 54H12C10.8954 54 10 53.1046 10 52V8Z"
-        fill="currentColor"
-        fillOpacity="0.15"
-        stroke="currentColor"
-        strokeWidth="2"
+    <div className="relative mb-8 flex justify-center">
+      <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-full blur-3xl" />
+      <Image
+        src="/logo.png"
+        alt="Zomato Logo"
+        width={120}
+        height={120}
+        className="relative z-10"
+        priority
       />
-      <path
-        d="M10 18H54M32 6V54"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <circle
-        cx="44"
-        cy="40"
-        r="8"
-        fill="currentColor"
-        fillOpacity="0.2"
-        stroke="currentColor"
-        strokeWidth="2"
-      />
-      <path
-        d="M44 35V42M41 42H47"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
+    </div>
   );
 }
 
@@ -54,43 +28,49 @@ export const WelcomeView = ({
   ref,
 }: React.ComponentProps<'div'> & WelcomeViewProps) => {
   return (
-    <div ref={ref}>
-      <section className="bg-background flex flex-col items-center justify-center text-center">
+    <div ref={ref} className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-red-50/30 dark:to-red-950/10">
+      <section className="flex flex-col items-center justify-center text-center px-4 py-12 max-w-3xl">
         <WelcomeImage />
 
-        <h1 className="text-foreground text-3xl font-bold mb-2 mt-4">
-          Active Recall Coach
+        <h1 className="text-foreground text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent">
+          Partner with Zomato
         </h1>
 
-        <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
-          Master programming through three powerful learning modes
-        </p>
-        
-        <p className="text-muted-foreground max-w-md pt-2 text-sm leading-5">
-          📚 <strong>Learn Mode:</strong> I'll teach you concepts clearly<br/>
-          ❓ <strong>Quiz Mode:</strong> Test your knowledge with questions<br/>
-          🎓 <strong>Teach Back Mode:</strong> Explain concepts to me and get feedback
+        <p className="text-foreground/90 text-lg md:text-xl max-w-2xl pt-2 leading-7 font-medium">
+          Discover how India's leading food delivery platform can help grow your restaurant business
         </p>
 
-        <Button variant="primary" size="lg" onClick={onStartCall} className="mt-6 w-64 font-mono">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 mb-8 w-full max-w-2xl">
+          <div className="bg-card/50 backdrop-blur p-5 rounded-xl border border-border/50 hover:border-primary/50 transition-colors">
+            <div className="text-3xl mb-2"></div>
+            <h3 className="font-semibold text-foreground mb-1">Food Delivery</h3>
+            <p className="text-sm text-muted-foreground">Reach millions of hungry customers</p>
+          </div>
+          <div className="bg-card/50 backdrop-blur p-5 rounded-xl border border-border/50 hover:border-primary/50 transition-colors">
+            <div className="text-3xl mb-2"></div>
+            <h3 className="font-semibold text-foreground mb-1">Dining Out</h3>
+            <p className="text-sm text-muted-foreground">Promote with exclusive deals</p>
+          </div>
+          <div className="bg-card/50 backdrop-blur p-5 rounded-xl border border-border/50 hover:border-primary/50 transition-colors">
+            <div className="text-3xl mb-2"></div>
+            <h3 className="font-semibold text-foreground mb-1">Business Tools</h3>
+            <p className="text-sm text-muted-foreground">Analytics & Hyperpure supply</p>
+          </div>
+        </div>
+
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={onStartCall}
+          className="mt-4 px-8 py-6 text-lg font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all"
+        >
           {startButtonText}
         </Button>
-      </section>
 
-      <div className="fixed bottom-5 left-0 flex w-full items-center justify-center">
-        <p className="text-muted-foreground max-w-prose pt-1 text-xs leading-5 font-normal text-pretty md:text-sm">
-          Need help getting set up? Check out the{' '}
-          <a
-            target="_blank"
-            rel="noopener noreferrer"
-            href="https://docs.livekit.io/agents/start/voice-ai/"
-            className="underline"
-          >
-            Voice AI quickstart
-          </a>
-          .
+        <p className="text-muted-foreground text-sm mt-6">
+          Click to start a voice conversation with our AI representative
         </p>
-      </div>
+      </section>
     </div>
   );
 };

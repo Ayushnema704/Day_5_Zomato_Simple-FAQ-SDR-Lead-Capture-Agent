@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import json
 import os
 from datetime import datetime
@@ -19,164 +19,220 @@ from livekit.agents import (
     function_tool,
     RunContext
 )
-from livekit.plugins import murf, silero, google, deepgram, noise_cancellation
+# murf may be provided as a local/custom plugin in some environments.
+# Try importing it first and fall back gracefully if it's not installed.
+try:
+    from livekit.plugins import murf
+except Exception:
+    murf = None
+
+from livekit.plugins import silero, google, deepgram
+try:
+    from livekit.plugins import noise_cancellation
+except Exception:
+    noise_cancellation = None
 
 logger = logging.getLogger("agent")
 
 load_dotenv(".env.local")
 
-# Path to the tutor content JSON file
-TUTOR_CONTENT_PATH = "tutor_content.json"
-LEARNING_LOG_PATH = "learning_log.json"
+# Paths to data files
+FAQ_CONTENT_PATH = "zomato_faq.json"
+LEADS_LOG_PATH = "leads.json"
+
+# Global FAQ data (loaded once at startup for performance)
+FAQ_DATA = None
 
 
-def load_tutor_content():
-    """Load the tutor content from JSON file."""
-    if os.path.exists(TUTOR_CONTENT_PATH):
+def load_faq_content():
+    """Load the Zomato FAQ content from JSON file."""
+    if os.path.exists(FAQ_CONTENT_PATH):
         try:
-            with open(TUTOR_CONTENT_PATH, "r") as f:
+            with open(FAQ_CONTENT_PATH, "r", encoding="utf-8") as f:
                 return json.load(f)
         except json.JSONDecodeError:
-            logger.warning("Tutor content file is corrupted")
+            logger.warning("FAQ content file is corrupted")
+            return {"company_info": {}, "faq": [], "pricing": {}, "target_audience": []}
+    return {"company_info": {}, "faq": [], "pricing": {}, "target_audience": []}
+
+
+def load_leads():
+    """Load existing leads from JSON file."""
+    if os.path.exists(LEADS_LOG_PATH):
+        try:
+            with open(LEADS_LOG_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            logger.warning("Leads log file is corrupted, starting fresh")
             return []
     return []
 
 
-def load_learning_log():
-    """Load the learning log from JSON file."""
-    if os.path.exists(LEARNING_LOG_PATH):
-        try:
-            with open(LEARNING_LOG_PATH, "r") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            logger.warning("Learning log file is corrupted, starting fresh")
-            return []
-    return []
-
-
-def save_learning_log(log_data):
-    """Save the learning log to JSON file."""
+def save_leads(leads_data):
+    """Save leads to JSON file."""
     try:
-        with open(LEARNING_LOG_PATH, "w") as f:
-            json.dump(log_data, f, indent=2)
-        logger.info("Learning log saved successfully")
+        with open(LEADS_LOG_PATH, "w", encoding="utf-8") as f:
+            json.dump(leads_data, f, indent=2, ensure_ascii=False)
+        logger.info("Leads saved successfully")
     except Exception as e:
-        logger.error(f"Error saving learning log: {e}")
+        logger.error(f"Error saving leads: {e}")
 
 
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
-            instructions="""You are an Active Recall Coach - a friendly and encouraging tutor that uses the "teach-the-tutor" method to help users master programming concepts through active learning.
+            instructions="""You are a Sales Development Representative (SDR) for Zomato, India's leading food delivery and restaurant discovery platform. Your role is to qualify leads, answer questions, and capture potential customer information.
 
-You have access to programming concepts (variables, loops, functions, conditionals) through the get_concept tool.
-
-Your role is to support THREE learning modes that the user can switch between at any time:
-
-**1. LEARN MODE** - You are the teacher (Use voice: Matthew, Conversation style)
-- Explain concepts clearly and conversationally using the concept summary
-- Break down complex ideas into simple terms
-- Give real-world examples
-- Check for understanding: "Does that make sense?" or "Would you like me to explain anything further?"
-- Users can ask you to explain any concept from the content
-
-**2. QUIZ MODE** - You test the learner (Use voice: Alicia, Conversation style)
-- Ask questions about concepts using the sample_question from the content
-- Wait for their answer
-- Provide encouraging feedback whether right or wrong
-- If wrong, gently correct and explain the right answer
-- Keep it conversational and supportive, not intimidating
-
-**3. TEACH BACK MODE** - The learner teaches you (Use voice: Ken, Conversation style)
-- Ask the user to explain a concept back to you
-- Listen actively to their explanation
-- Give qualitative feedback: "That's a great explanation!" or "You've got the main idea, but let me clarify one point..."
-- Encourage them even if they struggle
-- Point out what they got right before mentioning what they missed
+**Your Personality:**
+- Friendly, professional, and enthusiastic about food and technology
+- Consultative approach - understand needs before pitching
+- Warm and conversational, not pushy or sales-y
+- Knowledgeable about Zomato's full ecosystem
 
 **Conversation Flow:**
-1. Greet the user warmly and ask which learning mode they'd like to start with
-2. Once they choose a mode (learn, quiz, or teach_back), use get_concept to load a programming concept
-3. Execute that mode's behavior as described above
-4. After each interaction, ask if they want to continue with this mode, switch modes, or try a different concept
-5. Users can say things like "switch to quiz mode" or "let me try teaching it back" at any time
-6. Log their progress using save_learning_session when they complete activities
+1. **Warm Greeting**: Welcome the visitor and introduce yourself as a Zomato representative
+2. **Discovery**: Ask what brought them here today and what they're working on
+   - Are they a restaurant owner looking to grow?
+   - A business needing food solutions?
+   - Exploring partnership opportunities?
+3. **Needs Assessment**: Listen actively and ask follow-up questions to understand their:
+   - Current challenges with food delivery or restaurant management
+   - Business goals and timeline
+   - Team size and operation scale
+4. **Answer Questions**: When asked about Zomato, use the search_faq tool to provide accurate answers
+   - Never make up information not in the FAQ
+   - If unsure, acknowledge it and offer to connect them with specialists
+5. **Lead Capture**: Naturally collect information during conversation:
+   - Name, Company, Email (essential)
+   - Role, Use case, Team size, Timeline
+   - Don't ask all at once - gather organically through conversation
+6. **Summary & Next Steps**: When wrapping up:
+   - Provide a brief summary of what you discussed
+   - Confirm their interest level and timeline
+   - Save the lead information
+   - Offer next steps (demo, consultation, send materials)
 
 **Important Guidelines:**
-- Be encouraging and positive - learning should feel safe and fun
-- Keep explanations concise and voice-friendly (no long walls of text)
-- Use natural, conversational language
-- Avoid complex formatting or special characters
-- Adapt your teaching style based on their responses
-- Celebrate small wins and progress
-- Make it clear they can switch modes anytime
+- Keep responses concise and voice-friendly
+- Use the search_faq tool whenever asked specific questions about Zomato
+- Focus on understanding their needs before presenting solutions
+- Be honest if something is outside your knowledge - don't guess
+- Save lead information only after collecting the essential details
+- Make the conversation feel natural, not like an interrogation
+- Show genuine interest in helping them succeed
 
-Remember: The best way to learn is to teach. Help them master concepts through active recall!""",
+**Key Information to Remember:**
+- Zomato serves: Restaurants, cloud kitchens, delivery-only brands, QSRs
+- Solutions: Food delivery platform, restaurant technology, Hyperpure supplies, Blinkit quick commerce
+- Geographic reach: 1000+ cities across India
+- Different offerings for different business sizes and needs
+
+Remember: You're here to help potential partners understand how Zomato can solve their problems. Build rapport, understand needs, and capture quality lead information!""",
         )
 
     @function_tool
-    async def get_concept(
+    async def search_faq(
         self,
         context: RunContext,
-        concept_id: str,
+        query: str,
     ):
-        """Get a programming concept by its ID to teach, quiz, or have the user teach back.
+        """Search the Zomato FAQ to answer customer questions accurately.
+        
+        Use this tool whenever the user asks questions about:
+        - What Zomato does or offers
+        - Pricing and plans
+        - How services work
+        - City coverage
+        - Partnership details
+        - Features and capabilities
         
         Args:
-            concept_id: The ID of the concept (e.g., "variables", "loops", "functions", "conditionals")
+            query: The user's question or topic (e.g., "pricing", "delivery", "Zomato Gold", "restaurant partnership")
         """
-        logger.info(f"Loading concept: {concept_id}")
+        logger.info(f"Searching FAQ for: {query}")
         
-        # Load tutor content
-        content = load_tutor_content()
+        global FAQ_DATA
+        if FAQ_DATA is None:
+            FAQ_DATA = load_faq_content()
         
-        # Find the concept
-        concept = next((c for c in content if c["id"] == concept_id), None)
+        query_lower = query.lower()
+        relevant_answers = []
         
-        if not concept:
-            return f"Concept '{concept_id}' not found. Available concepts: variables, loops, functions, conditionals"
+        # Search through FAQ entries
+        for faq in FAQ_DATA.get("faq", []):
+            question = faq["question"].lower()
+            answer = faq["answer"]
+            
+            # Simple keyword matching
+            if any(word in question for word in query_lower.split()) or any(word in query_lower for word in question.split()):
+                relevant_answers.append(f"Q: {faq['question']}\nA: {answer}")
         
-        return f"Concept: {concept['title']}\n\nSummary: {concept['summary']}\n\nSample Question: {concept['sample_question']}"
+        if not relevant_answers:
+            # Return general company info if no specific match
+            company_info = FAQ_DATA.get("company_info", {})
+            desc = company_info.get("description", "Leading food delivery platform")
+            services = ", ".join(company_info.get("services", []))
+            return f"Company: {company_info.get('name', 'Zomato')}\n{desc}\n\nServices: {services}"
+        
+        # Return top 2 most relevant answers to keep response concise
+        return "\n\n".join(relevant_answers[:2])
 
     @function_tool
-    async def save_learning_session(
+    async def save_lead(
         self,
         context: RunContext,
-        mode: str,
-        concept_id: str,
+        name: str,
+        email: str,
+        company: Optional[str] = None,
+        role: Optional[str] = None,
+        use_case: Optional[str] = None,
+        team_size: Optional[str] = None,
+        timeline: Optional[str] = None,
         notes: Optional[str] = None,
     ):
-        """Save a learning session to track the user's progress.
+        """Save lead information after gathering details from the conversation.
         
-        Call this when the user completes an activity in any mode (learn, quiz, or teach_back).
+        Call this tool when you have collected the essential information (name, email, and ideally company).
+        The user doesn't need to explicitly ask to save - do it naturally when wrapping up.
         
         Args:
-            mode: The learning mode used (learn, quiz, or teach_back)
-            concept_id: The concept ID that was practiced
-            notes: Optional notes about the session (e.g., "struggled with loop syntax" or "explained variables clearly")
+            name: Lead's full name
+            email: Lead's email address
+            company: Company/Restaurant name (if applicable)
+            role: Their role/position (e.g., "Owner", "Manager", "Marketing Head")
+            use_case: What they want to use Zomato for (e.g., "grow restaurant delivery", "manage multiple locations")
+            team_size: Size of their team or business (e.g., "5-10", "single location", "chain of 20 outlets")
+            timeline: When they're looking to start (e.g., "immediately", "next month", "exploring options")
+            notes: Any additional context from the conversation
         """
-        logger.info(f"Saving learning session - Mode: {mode}, Concept: {concept_id}")
+        logger.info(f"Saving lead - Name: {name}, Email: {email}, Company: {company}")
         
-        # Load existing log
-        log_data = load_learning_log()
+        # Load existing leads
+        leads = load_leads()
         
-        # Create new entry
-        entry = {
+        # Create new lead entry
+        lead = {
             "timestamp": datetime.now().isoformat(),
             "date": datetime.now().strftime("%Y-%m-%d"),
             "time": datetime.now().strftime("%H:%M:%S"),
-            "mode": mode,
-            "concept_id": concept_id,
+            "name": name,
+            "email": email,
+            "company": company,
+            "role": role,
+            "use_case": use_case,
+            "team_size": team_size,
+            "timeline": timeline,
             "notes": notes,
+            "source": "Voice SDR Agent"
         }
         
-        # Add to log
-        log_data.append(entry)
+        # Add to leads
+        leads.append(lead)
         
         # Save to file
-        save_learning_log(log_data)
+        save_leads(leads)
         
-        return f"Learning session saved! You practiced '{concept_id}' in {mode} mode."
+        return f"Lead information saved successfully! I've captured {name}'s details. Thank you for your interest in Zomato!"
 
 
 def prewarm(proc: JobProcess):
@@ -191,6 +247,25 @@ async def entrypoint(ctx: JobContext):
     }
 
     # Set up a voice AI pipeline using OpenAI, Cartesia, AssemblyAI, and the LiveKit turn detector
+
+    # Select TTS implementation: prefer Murf if available, otherwise fall back to Google TTS if installed.
+    # If neither is available, leave TTS unset (None) so the session can still run in text-only mode.
+    try:
+        if murf is not None:
+            tts_obj = murf.TTS(
+                voice="en-US-matthew",
+                style="Conversation",
+                tokenizer=tokenize.basic.SentenceTokenizer(min_sentence_len=2),
+                text_pacing=True,
+            )
+        else:
+            try:
+                tts_obj = google.TTS(voice="alloy")
+            except Exception:
+                tts_obj = None
+    except Exception:
+        tts_obj = None
+
     session = AgentSession(
         # Speech-to-text (STT) is your agent's ears, turning the user's speech into text that the LLM can understand
         # See all available models at https://docs.livekit.io/agents/models/stt/
@@ -202,12 +277,7 @@ async def entrypoint(ctx: JobContext):
             ),
         # Text-to-speech (TTS) is your agent's voice, turning the LLM's text into speech that the user can hear
         # See all available models as well as voice selections at https://docs.livekit.io/agents/models/tts/
-        tts=murf.TTS(
-                voice="en-US-matthew", 
-                style="Conversation",
-                tokenizer=tokenize.basic.SentenceTokenizer(min_sentence_len=2),
-                text_pacing=True
-            ),
+        tts=tts_obj,
         # VAD and turn detection are used to determine when the user is speaking and when the agent should respond
         # See more at https://docs.livekit.io/agents/build/turns
         # Using VAD-based turn detection for Windows compatibility
@@ -265,8 +335,12 @@ async def entrypoint(ctx: JobContext):
     await ctx.connect()
     
     # Send initial greeting when user connects
-    await session.say("Hello! Welcome to your Active Recall Coach. I'm here to help you master programming concepts through three learning modes: Learn mode where I teach you, Quiz mode where I test your knowledge, and Teach Back mode where you explain concepts to me. Which mode would you like to start with?", allow_interruptions=True)
+    await session.say("Hello! Thanks for connecting with Zomato. I'm here to help answer any questions about our services and explore how we can support your business. What brings you here today?", allow_interruptions=True)
 
 
 if __name__ == "__main__":
     cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm))
+
+
+
+
