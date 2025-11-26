@@ -222,25 +222,54 @@ Zomato SDR includes several optimizations for sales conversations:
 
 ## Troubleshooting
 
+### Common Issues
+
 **Agent not responding?**
 - Ensure all three services are running (LiveKit server, backend agent, frontend)
-- Check that API keys are correct in `.env.local` files
+- Check that all API keys are correct in `.env.local` files (Murf, Google, Deepgram)
+- Verify `zomato_faq.json` exists in backend folder
 - Restart backend agent if it shut down
+
+**FAQ not working?**
+- Check backend logs for "Searching FAQ for: [query]"
+- Verify `zomato_faq.json` is valid JSON: `Get-Content backend\zomato_faq.json | ConvertFrom-Json`
+- Agent should call `search_faq` tool when asked questions about Zomato
+
+**Leads not being saved?**
+- Check if `leads.json` exists in backend folder (empty `[]` is OK initially)
+- Look for "Captured lead:" messages in backend terminal
+- Verify write permissions in backend directory
+- Agent needs at minimum: name, email, and company to save a lead
 
 **"Failed to fetch" error?**
 - Restart frontend to reload environment variables: `pnpm dev`
-- Verify `.env.local` exists in frontend directory
-
-**Chat not visible?**
-- Chat is now visible by default (fixed in `session-view.tsx`)
+- Verify `.env.local` exists in both backend and frontend directories
+- Check LIVEKIT_URL is set to `ws://127.0.0.1:7880` for local development
 
 **Microphone permission denied?**
-- Allow microphone access in your browser settings
-- Try using HTTPS or localhost (required for microphone access)
+- Allow microphone access in browser settings (Chrome/Edge: Settings → Privacy → Microphone)
+- Ensure you're using localhost or HTTPS (required for microphone access)
+- Test mic: Open DevTools (F12) → Console → `navigator.mediaDevices.getUserMedia({audio: true})`
 
-**Agent not switching modes?**
-- Be explicit: "Switch to quiz mode" or "I want to try teach back mode"
-- Agent will confirm the mode switch
+**Zomato branding not showing?**
+- Hard refresh browser (Ctrl+Shift+R)
+- Verify `frontend/public/logo.png` exists
+- Check `app-config.ts` has Zomato branding
+- Clear Next.js cache: `Remove-Item -Recurse -Force frontend\.next`
+
+### Quick Reset
+```powershell
+# If nothing works, clean restart:
+cd backend
+Remove-Item -Recurse -Force venv, *.egg-info
+python -m venv venv
+.\venv\Scripts\activate
+pip install -e .
+
+cd ..\frontend
+Remove-Item -Recurse -Force node_modules, .next
+pnpm install
+```
 
 ## Resources
 
