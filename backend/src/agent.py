@@ -1,7 +1,7 @@
 ﻿import logging
-import json
+import asyncio
 import os
-from datetime import datetime
+from dataclasses import dataclass
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -16,11 +16,10 @@ from livekit.agents import (
     cli,
     metrics,
     tokenize,
-    function_tool,
-    RunContext
+    llm,
 )
-# murf may be provided as a local/custom plugin in some environments.
-# Try importing it first and fall back gracefully if it's not installed.
+
+# Try optional plugin imports (murf preferred for fast TTS)
 try:
     from livekit.plugins import murf
 except Exception:
@@ -32,273 +31,190 @@ try:
 except Exception:
     noise_cancellation = None
 
-logger = logging.getLogger("agent")
-
+logger = logging.getLogger("day10.improv")
 load_dotenv(".env.local")
 
-# Paths to data files
-FAQ_CONTENT_PATH = "zomato_faq.json"
-LEADS_LOG_PATH = "leads.json"
 
-# Global FAQ data (loaded once at startup for performance)
-FAQ_DATA = None
-
-
-def load_faq_content():
-    """Load the Zomato FAQ content from JSON file."""
-    if os.path.exists(FAQ_CONTENT_PATH):
-        try:
-            with open(FAQ_CONTENT_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            logger.warning("FAQ content file is corrupted")
-            return {"company_info": {}, "faq": [], "pricing": {}, "target_audience": []}
-    return {"company_info": {}, "faq": [], "pricing": {}, "target_audience": []}
+def get_day10_announcement() -> str:
+    """Return the Day 10 Voice Improv Battle announcement text."""
+    return (
+        "Hey there, improv partner! Welcome to the Voice Improv Battle! "
+        "I'm here to play with you using the classic 'Yes, and' technique. "
+        "Start with anything — a character, a wild scenario, or just a silly mood — "
+        "and I'll build on it with you. Let's create something fun together! "
+        "Ready? Hit me with your opening line!"
+    )
 
 
-def load_leads():
-    """Load existing leads from JSON file."""
-    if os.path.exists(LEADS_LOG_PATH):
-        try:
-            with open(LEADS_LOG_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            logger.warning("Leads log file is corrupted, starting fresh")
-            return []
-    return []
+@dataclass
+class Energy:
+    level: str  # 'low'|'medium'|'high'
+    score: float
 
 
-def save_leads(leads_data):
-    """Save leads to JSON file."""
-    try:
-        with open(LEADS_LOG_PATH, "w", encoding="utf-8") as f:
-            json.dump(leads_data, f, indent=2, ensure_ascii=False)
-        logger.info("Leads saved successfully")
-    except Exception as e:
-        logger.error(f"Error saving leads: {e}")
+def detect_energy_from_text(text: str) -> Energy:
+    """Very small heuristic to estimate energy from user's transcription.
+
+    - Lots of exclamations, short sentences, and all-caps => higher energy
+    - Long, slow sentences with few punctuation marks => lower energy
+    This is intentionally simple and replaceable with a voice-based estimator.
+    """
+    if not text:
+        return Energy(level="medium", score=0.5)
+
+    exclaims = text.count("!")
+    caps = sum(1 for w in text.split() if w.isupper() and len(w) > 1)
+    words = len(text.split())
+
+    score = min(1.0, (exclaims * 0.4) + (caps * 0.15) + (words / 50.0))
+    if score > 0.6:
+        level = "high"
+    elif score < 0.3:
+        level = "low"
+    else:
+        level = "medium"
+    return Energy(level=level, score=score)
 
 
-class Assistant(Agent):
-    def __init__(self) -> None:
-        super().__init__(
-            instructions="""You are a Sales Development Representative (SDR) for Zomato, India's leading food delivery and restaurant discovery platform. Your role is to qualify leads, answer questions, and capture potential customer information.
+def build_improv_prompt(transcript: str, energy: Energy, persona: Optional[str] = None) -> str:
+    """Construct an expressive prompt tailored for improv-style LLM responses.
 
-**Your Personality:**
-- Friendly, professional, and enthusiastic about food and technology
-- Consultative approach - understand needs before pitching
-- Warm and conversational, not pushy or sales-y
-- Knowledgeable about Zomato's full ecosystem
+    The prompt encourages 'Yes-and' behavior, short turns, adaptive tone, and playful creativity.
+    """
+    persona_line = f"You are playing the role of: {persona}. " if persona else "You are a versatile improv partner. "
+    
+    energy_guidance = {
+        "high": "Match their high energy with excitement! Be punchy, enthusiastic, and use exclamation points. Keep it super snappy.",
+        "medium": "Keep a friendly, warm conversational tone with playful twists. Be engaging and supportive.",
+        "low": "Be gentle, supportive, and slightly dramatic. Use calmer pacing and evocative language.",
+    }[energy.level]
 
-**Conversation Flow:**
-1. **Warm Greeting**: Welcome the visitor and introduce yourself as a Zomato representative
-2. **Discovery**: Ask what brought them here today and what they're working on
-   - Are they a restaurant owner looking to grow?
-   - A business needing food solutions?
-   - Exploring partnership opportunities?
-3. **Needs Assessment**: Listen actively and ask follow-up questions to understand their:
-   - Current challenges with food delivery or restaurant management
-   - Business goals and timeline
-   - Team size and operation scale
-4. **Answer Questions**: When asked about Zomato, use the search_faq tool to provide accurate answers
-   - Never make up information not in the FAQ
-   - If unsure, acknowledge it and offer to connect them with specialists
-5. **Lead Capture**: Naturally collect information during conversation:
-   - Name, Company, Email (essential)
-   - Role, Use case, Team size, Timeline
-   - Don't ask all at once - gather organically through conversation
-6. **Summary & Next Steps**: When wrapping up:
-   - Provide a brief summary of what you discussed
-   - Confirm their interest level and timeline
-   - Save the lead information
-   - Offer next steps (demo, consultation, send materials)
+    # Add example improv scenarios to guide the LLM
+    examples = (
+        "\nExample exchanges:\n"
+        "User: 'We're pirates looking for treasure!'\n"
+        "You: 'Yes! And I just spotted a mysterious island with a glowing cave. Should we row there or swim?'\n\n"
+        "User: 'I'm a nervous chef on a cooking show.'\n"
+        "You: 'Yes, and the secret ingredient today is... dragon fruit! But wait, it's actually breathing fire!'\n\n"
+    )
 
-**Important Guidelines:**
-- Keep responses concise and voice-friendly
-- Use the search_faq tool whenever asked specific questions about Zomato
-- Focus on understanding their needs before presenting solutions
-- Be honest if something is outside your knowledge - don't guess
-- Save lead information only after collecting the essential details
-- Make the conversation feel natural, not like an interrogation
-- Show genuine interest in helping them succeed
+    prompt = (
+        f"{persona_line}"
+        "You're in a live voice improv battle. Here are your core rules:\n\n"
+        "🎭 IMPROV FUNDAMENTALS:\n"
+        "1) ALWAYS 'Yes, and' - Accept the user's reality and add something new\n"
+        "2) Keep responses SHORT (1-3 sentences max) - leave room for them to respond\n"
+        "3) Add SPECIFICS - names, colors, sounds, emotions make scenes vivid\n"
+        "4) Include a playful ACTION or EMOTION to keep the scene moving\n"
+        "5) Never block or negate - build on every offer they give you\n\n"
+        f"⚡ ENERGY LEVEL: {energy_guidance}\n\n"
+        "💡 SPECIAL NOTES:\n"
+        "- If they ask a real question, answer briefly then offer to continue playing\n"
+        "- If they're stuck, give them an exciting choice or dilemma\n"
+        "- Match their style: silly stays silly, serious stays serious\n"
+        "- No stage directions in brackets - speak naturally as your character\n"
+        f"{examples}\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"User just said: \"{transcript or 'hello'}\"\n\n"
+        "Your response (1-3 sentences, spoken naturally):"
+    )
+    return prompt
 
-**Key Information to Remember:**
-- Zomato serves: Restaurants, cloud kitchens, delivery-only brands, QSRs
-- Solutions: Food delivery platform, restaurant technology, Hyperpure supplies, Blinkit quick commerce
-- Geographic reach: 1000+ cities across India
-- Different offerings for different business sizes and needs
 
-Remember: You're here to help potential partners understand how Zomato can solve their problems. Build rapport, understand needs, and capture quality lead information!""",
-        )
+def fallback_reply(user_text: str) -> str:
+    """Fallback responses when LLM generation fails."""
+    if not user_text:
+        return "Hey there! I'm your improv buddy. Give me an opening line or scenario and let's create something amazing together!"
+    
+    # Provide energetic fallbacks that encourage continuation
+    fallbacks = [
+        f"Yes! And let me add to that... {user_text.split()[0] if user_text.split() else 'this'} just became ten times more interesting!",
+        f"I love where you're going with that! And suddenly, everything changes because...",
+        f"Absolutely! And here's the twist: what if we're actually...",
+        f"Yes, and! That reminds me of the time when we...",
+    ]
+    import random
+    return random.choice(fallbacks)
 
-    @function_tool
-    async def search_faq(
-        self,
-        context: RunContext,
-        query: str,
-    ):
-        """Search the Zomato FAQ to answer customer questions accurately.
+
+class ImprovAssistant(Agent):
+    """Agent that contains any agent-level configuration or helper methods for improv."""
+
+    def __init__(self, instructions: Optional[str] = None) -> None:
+        # Build comprehensive improv instructions for the LLM
+        improv_instructions = """You're in a live voice improv battle! Follow these rules:
+
+🎭 IMPROV FUNDAMENTALS:
+1) ALWAYS use 'Yes, and' - Accept the user's reality and add something new
+2) Keep responses VERY SHORT (1-3 sentences max) - leave room for them to respond
+3) Add SPECIFICS - names, colors, sounds, emotions make scenes vivid
+4) Include a playful ACTION or EMOTION to keep the scene moving
+5) Never block or negate - build on every offer they give you
+
+⚡ ENERGY MATCHING:
+- If they're excited (exclamation marks, caps) → Match their energy with quick, punchy responses!
+- If they're calm → Be friendly, playful but gentler
+- If they're dramatic → Amp up the drama with vivid emotions
+
+💡 SPECIAL NOTES:
+- If they ask a real question, answer briefly then offer to continue playing
+- If they're stuck, give them an exciting choice or dilemma
+- Match their style: silly stays silly, serious stays serious
+- No stage directions in brackets - speak naturally as your character
+
+Examples:
+User: "We're pirates looking for treasure!"
+You: "Yes! And I just spotted a mysterious island with a glowing cave. Should we row there or swim?"
+
+User: "I'm a nervous chef on a cooking show."
+You: "Yes, and the secret ingredient today is... dragon fruit! But wait, it's actually breathing fire!"
+
+Now let's play! Start with a character, scenario, or mood, and I'll jump right in!"""
         
-        Use this tool whenever the user asks questions about:
-        - What Zomato does or offers
-        - Pricing and plans
-        - How services work
-        - City coverage
-        - Partnership details
-        - Features and capabilities
-        
-        Args:
-            query: The user's question or topic (e.g., "pricing", "delivery", "Zomato Gold", "restaurant partnership")
-        """
-        logger.info(f"Searching FAQ for: {query}")
-        
-        global FAQ_DATA
-        if FAQ_DATA is None:
-            FAQ_DATA = load_faq_content()
-        
-        query_lower = query.lower()
-        relevant_answers = []
-        
-        # Search through FAQ entries
-        for faq in FAQ_DATA.get("faq", []):
-            question = faq["question"].lower()
-            answer = faq["answer"]
-            
-            # Simple keyword matching
-            if any(word in question for word in query_lower.split()) or any(word in query_lower for word in question.split()):
-                relevant_answers.append(f"Q: {faq['question']}\nA: {answer}")
-        
-        if not relevant_answers:
-            # Return general company info if no specific match
-            company_info = FAQ_DATA.get("company_info", {})
-            desc = company_info.get("description", "Leading food delivery platform")
-            services = ", ".join(company_info.get("services", []))
-            return f"Company: {company_info.get('name', 'Zomato')}\n{desc}\n\nServices: {services}"
-        
-        # Return top 2 most relevant answers to keep response concise
-        return "\n\n".join(relevant_answers[:2])
+        super().__init__(instructions=instructions or improv_instructions)
 
-    @function_tool
-    async def save_lead(
-        self,
-        context: RunContext,
-        name: str,
-        email: str,
-        company: Optional[str] = None,
-        role: Optional[str] = None,
-        use_case: Optional[str] = None,
-        team_size: Optional[str] = None,
-        timeline: Optional[str] = None,
-        notes: Optional[str] = None,
-    ):
-        """Save lead information after gathering details from the conversation.
-        
-        Call this tool when you have collected the essential information (name, email, and ideally company).
-        The user doesn't need to explicitly ask to save - do it naturally when wrapping up.
-        
-        Args:
-            name: Lead's full name
-            email: Lead's email address
-            company: Company/Restaurant name (if applicable)
-            role: Their role/position (e.g., "Owner", "Manager", "Marketing Head")
-            use_case: What they want to use Zomato for (e.g., "grow restaurant delivery", "manage multiple locations")
-            team_size: Size of their team or business (e.g., "5-10", "single location", "chain of 20 outlets")
-            timeline: When they're looking to start (e.g., "immediately", "next month", "exploring options")
-            notes: Any additional context from the conversation
-        """
-        logger.info(f"Saving lead - Name: {name}, Email: {email}, Company: {company}")
-        
-        # Load existing leads
-        leads = load_leads()
-        
-        # Create new lead entry
-        lead = {
-            "timestamp": datetime.now().isoformat(),
-            "date": datetime.now().strftime("%Y-%m-%d"),
-            "time": datetime.now().strftime("%H:%M:%S"),
-            "name": name,
-            "email": email,
-            "company": company,
-            "role": role,
-            "use_case": use_case,
-            "team_size": team_size,
-            "timeline": timeline,
-            "notes": notes,
-            "source": "Voice SDR Agent"
-        }
-        
-        # Add to leads
-        leads.append(lead)
-        
-        # Save to file
-        save_leads(leads)
-        
-        return f"Lead information saved successfully! I've captured {name}'s details. Thank you for your interest in Zomato!"
-
+class Assistant(ImprovAssistant):
+    pass
 
 def prewarm(proc: JobProcess):
-    proc.userdata["vad"] = silero.VAD.load()
+    """Preload lightweight models/plugins to lower first-response latency."""
+    try:
+        proc.userdata["vad"] = silero.VAD.load()
+    except Exception:
+        proc.userdata["vad"] = None
 
 
 async def entrypoint(ctx: JobContext):
-    # Logging setup
-    # Add any other context you want in all log entries here
-    ctx.log_context_fields = {
-        "room": ctx.room.name,
-    }
+    """Main entrypoint for the worker — sets up session, nodes, handlers and runs the agent."""
+    ctx.log_context_fields = {"room": ctx.room.name}
 
-    # Set up a voice AI pipeline using OpenAI, Cartesia, AssemblyAI, and the LiveKit turn detector
-
-    # Select TTS implementation: prefer Murf if available, otherwise fall back to Google TTS if installed.
-    # If neither is available, leave TTS unset (None) so the session can still run in text-only mode.
+    # Prefer Murf when explicitly configured via environment (safer than hardcoding a voice id).
+    # Default to Google TTS to avoid runtime 'Invalid voice_id' warnings from Murf.
+    tts_obj = None
     try:
-        if murf is not None:
-            tts_obj = murf.TTS(
-                voice="en-US-matthew",
-                style="Conversation",
-                tokenizer=tokenize.basic.SentenceTokenizer(min_sentence_len=2),
-                text_pacing=True,
-            )
-        else:
+        murf_api_key = os.getenv("MURF_API_KEY")
+        murf_voice = os.getenv("MURF_VOICE")
+        if murf is not None and murf_api_key and murf_voice:
             try:
-                tts_obj = google.TTS(voice="alloy")
+                tts_obj = murf.TTS(voice=murf_voice, style="conversational")
             except Exception:
-                tts_obj = None
+                logging.warning("Murf TTS init failed for voice '%s', falling back to Google TTS", murf_voice)
+                tts_obj = google.TTS(voice="alloy")
+        else:
+            tts_obj = google.TTS(voice="alloy")
     except Exception:
         tts_obj = None
 
+    # Create the AgentSession with STT/LLM/TTS and VAD from prewarm
     session = AgentSession(
-        # Speech-to-text (STT) is your agent's ears, turning the user's speech into text that the LLM can understand
-        # See all available models at https://docs.livekit.io/agents/models/stt/
         stt=deepgram.STT(model="nova-3"),
-        # A Large Language Model (LLM) is your agent's brain, processing user input and generating a response
-        # See all available models at https://docs.livekit.io/agents/models/llm/
-        llm=google.LLM(
-                model="gemini-2.5-flash",
-            ),
-        # Text-to-speech (TTS) is your agent's voice, turning the LLM's text into speech that the user can hear
-        # See all available models as well as voice selections at https://docs.livekit.io/agents/models/tts/
+        llm=google.LLM(model="gemini-2.5-flash"),
         tts=tts_obj,
-        # VAD and turn detection are used to determine when the user is speaking and when the agent should respond
-        # See more at https://docs.livekit.io/agents/build/turns
-        # Using VAD-based turn detection for Windows compatibility
-        vad=ctx.proc.userdata["vad"],
-        # allow the LLM to generate a response while waiting for the end of turn
-        # See more at https://docs.livekit.io/agents/build/audio/#preemptive-generation
+        vad=ctx.proc.userdata.get("vad"),
         preemptive_generation=True,
     )
 
-    # To use a realtime model instead of a voice pipeline, use the following session setup instead.
-    # (Note: This is for the OpenAI Realtime API. For other providers, see https://docs.livekit.io/agents/models/realtime/))
-    # 1. Install livekit-agents[openai]
-    # 2. Set OPENAI_API_KEY in .env.local
-    # 3. Add `from livekit.plugins import openai` to the top of this file
-    # 4. Use the following session setup instead of the version above
-    # session = AgentSession(
-    #     llm=openai.realtime.RealtimeModel(voice="marin")
-    # )
-
-    # Metrics collection, to measure pipeline performance
-    # For more information, see https://docs.livekit.io/agents/build/metrics/
+    # Metrics collection
     usage_collector = metrics.UsageCollector()
 
     @session.on("metrics_collected")
@@ -307,35 +223,50 @@ async def entrypoint(ctx: JobContext):
         usage_collector.collect(ev.metrics)
 
     async def log_usage():
-        summary = usage_collector.get_summary()
-        logger.info(f"Usage: {summary}")
+        logger.info("Usage: %s", usage_collector.get_summary())
 
     ctx.add_shutdown_callback(log_usage)
 
-    # # Add a virtual avatar to the session, if desired
-    # # For other providers, see https://docs.livekit.io/agents/models/avatar/
-    # avatar = hedra.AvatarSession(
-    #   avatar_id="...",  # See https://docs.livekit.io/agents/models/avatar/plugins/hedra
-    # )
-    # # Start the avatar and wait for it to join
-    # await avatar.start(session, room=ctx.room)
+    # Start the agent session and join the room
+    assistant = ImprovAssistant()
+    # Only enable the (cloud-backed) audio filters if explicitly allowed in env.
+    enable_audio_filter = os.getenv("ENABLE_AUDIO_FILTER", "false").lower() in ("1", "true", "yes")
+    noise_cancel_obj = None
+    if enable_audio_filter and noise_cancellation:
+        try:
+            noise_cancel_obj = noise_cancellation.BVC()
+        except Exception:
+            noise_cancel_obj = None
 
-    # Start the session, which initializes the voice pipeline and warms up the models
-    assistant = Assistant()
     await session.start(
         agent=assistant,
         room=ctx.room,
-        room_input_options=RoomInputOptions(
-            # For telephony applications, use `BVCTelephony` for best results
-            noise_cancellation=noise_cancellation.BVC(),
-        ),
+        room_input_options=RoomInputOptions(noise_cancellation=noise_cancel_obj),
     )
-
-    # Join the room and connect to the user
     await ctx.connect()
-    
-    # Send initial greeting when user connects
-    await session.say("Hello! Thanks for connecting with Zomato. I'm here to help answer any questions about our services and explore how we can support your business. What brings you here today?", allow_interruptions=True)
+
+    # Initial greeting/announcement
+    try:
+        ann = get_day10_announcement()
+        # If no TTS is configured, avoid calling session.say (it will raise).
+        if getattr(session, "tts", None) is not None:
+            await session.say(ann, allow_interruptions=True)
+        else:
+            # Insert a plain chat message so frontends can show the announcement text.
+            try:
+                from livekit.agents.llm import ChatMessage
+
+                session.history.insert(ChatMessage(role="assistant", content=[ann]))
+            except Exception:
+                logger.info("No TTS and failed to insert announcement into chat history")
+    except Exception:
+        logger.exception("Failed to send announcement greeting")
+
+    # AgentSession automatically handles speech turn flow:
+    # 1. User speaks → STT transcribes → user_speech_committed event
+    # 2. Session uses agent.instructions + conversation history to generate LLM response
+    # 3. LLM response → TTS → plays to user
+    # No manual event handling needed - the session manages the entire flow!
 
 
 if __name__ == "__main__":
